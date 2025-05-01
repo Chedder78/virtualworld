@@ -1,4 +1,9 @@
-// js/core/App.js
+// In your App.js
+import { MapSystem } from './systems/MapSystem.js';
+
+export class App {
+  constructor() {
+    // ... existing code ...// js/core/App.js
 import { EnhancedXRManager } from './EnhancedXRManager.js'; // Replace WebXRManager
 import { CyberpunkXRExperience } from '../experiences/CyberpunkXRExperience.js';
 
