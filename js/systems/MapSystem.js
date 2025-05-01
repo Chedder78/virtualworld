@@ -1,6 +1,44 @@
 // js/systems/MapSystem.js
 export class MapSystem {
   constructor(scene, camera, renderer) {
+    this.setupMapControls()
+    setupMapControls() {
+    // Mouse wheel zoom
+    document.addEventListener('wheel', (e) => {
+      if (this.mapPlane?.visible) {
+        e.preventDefault();
+        const zoomFactor = 1 + e.deltaY * -0.001;
+        this.mapPlane.scale.multiplyScalar(zoomFactor);
+  export class MapSystem {
+  constructor(scene, camera, renderer) {
+    // ... existing constructor code ...
+    this.setupMapControls(); // Add this line
+  }
+
+  // ADD THIS NEW METHOD:
+  setupMapControls() {
+    // Mouse wheel zoom
+    document.addEventListener('wheel', (e) => {
+      if (this.mapPlane?.visible) {
+        e.preventDefault();
+        const zoomFactor = 1 + e.deltaY * -0.001;
+        this.mapPlane.scale.multiplyScalar(zoomFactor);
+        
+        // Constrain zoom levels
+        this.mapPlane.scale.clampScalar(0.5, 3);
+      }
+    }, { passive: false });
+
+    // Touch pinch zoom (for mobile/VR controllers)
+    this.pinchStartDistance = 0;
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2 && this.mapPlane?.visible) {
+        this.pinchStartDistance = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      }
+    });
     this.scene = scene;
     this.camera = camera;
     this.renderer = renderer;
