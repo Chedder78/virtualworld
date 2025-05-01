@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS | Immersive Experience Portal</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@shoelace-style/shoelace@2.0.0-beta.64/dist/themes/light.css">
+    <style>
+        :root {
+            --primary-hue: 210;
+            --secondary-hue: 330;
+            --surface-1: hsl(var(--primary-hue) 15% 10%);
+            --surface-2: hsl(var(--primary-hue) 15% 15%);
+            --text-1: hsl(var(--primary-hue) 15% 95%);
+            --accent-1: hsl(var(--secondary-hue) 80% 60%);
+            
+            --space-xs: 0.25rem;
+            --space-sm: 0.5rem;
+            --space-md: 1rem;
+            --space-lg: 2rem;
+            --space-xl: 4rem;
+            
+            --radius-sm: 4px;
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --radius-full: 999px;
+            
+            --transition-fast: 150ms;
+            --transition-medium: 300ms;
+            --transition-slow: 500ms;
+        }
+        
+        [data-theme="light"] {
+            --surface-1: hsl(var(--primary-hue) 15% 98%);
+            --surface-2: hsl(var(--primary-hue) 15% 92%);
+            --text-1: hsl(var(--primary-hue) 15% 10%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--surface-1);
+            color: var(--text-1);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        #app {
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            min-height: 100vh;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <nexus-header></nexus-header>
+        <nexus-viewport></nexus-viewport>
+        <nexus-navigation></nexus-navigation>
+    </div>
+
+    <script type="module">
+        // Modern JavaScript modules with top-level await
+        import { ThreeRenderer, ExperienceManager } from './js/core.js';
+        import { loadTextures, loadModels } from './js/assets.js';
+        import './components/nexus-header.js';
+        import './components/nexus-viewport.js';
+        import './components/nexus-navigation.js';
+        
+        // Initialize app
+        class NexusApp {
+            static async init() {
+                // Load assets
+                const [textures, models] = await Promise.all([
+                    loadTextures(),
+                    loadModels()
+                ]);
+                
+                // Initialize renderer
+                this.renderer = new ThreeRenderer({
+                    antialias: true,
+                    physicallyCorrectLights: true,
+                    toneMapping: THREE.ACESFilmicToneMapping
+                });
+                
+                // Create experience manager
+                this.experiences = new ExperienceManager({
+                    renderer: this.renderer,
+                    textures,
+                    models
+                });
+                
+                // Start animation loop
+                this.renderer.setAnimationLoop(this.update.bind(this));
+            }
+            
+            static update(time) {
+                this.experiences.update(time);
+                this.renderer.render();
+            }
+        }
+        
+        // Start the app
+        NexusApp.init();
+    </script>
+</body>
+</html>
