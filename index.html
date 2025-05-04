@@ -2,747 +2,176 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>GPK ULTRA 3D | Immersive Collector's Hub</title>
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.0/dist/aframe-environment-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-    <script src="https://unpkg.com/aframe-particle-system-component@1.1.3/dist/aframe-particle-system-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
     <style>
-        :root {
-            --gpk-red: #ff3e41;
-            --gpk-yellow: #ffde37;
-            --gpk-blue: #2e86ab;
-            --gpk-black: #1a1a1a;
-            --gpk-paper: #f5f5f0;
-            --gpk-glow: 0 0 10px var(--gpk-yellow);
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Bangers', cursive, sans-serif;
-        }
-        
         body {
-            background-color: var(--gpk-black);
-            color: white;
-            overflow-x: hidden;
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Bangers', cursive;
         }
-        
-        /* UI Elements */
-        .ui-panel {
-            position: fixed;
-            background: rgba(26, 26, 26, 0.85);
-            border: 3px solid var(--gpk-yellow);
-            border-radius: 10px;
-            padding: 20px;
-            z-index: 100;
-            box-shadow: var(--gpk-glow);
-            transition: all 0.3s ease;
-        }
-
-        /* Navigation Controls */
-        #nav-controls {
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 15px;
-        }
-
-        .nav-button {
-            background: var(--gpk-yellow);
-            color: var(--gpk-black);
-            border: 3px solid var(--gpk-black);
-            padding: 12px 24px;
-            border-radius: 30px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            text-shadow: 1px 1px 0 rgba(255,255,255,0.3);
-        }
-
-        .nav-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.4), var(--gpk-glow);
-        }
-
-        /* Card Details Panel */
-        #card-details {
-            width: 320px;
-            top: 20px;
-            right: 20px;
-            display: none;
-        }
-
-        .card-title {
-            color: var(--gpk-yellow);
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 0 var(--gpk-red);
-        }
-
-        .card-info {
-            margin-bottom: 8px;
-            font-size: 1.1rem;
-        }
-
-        .card-value {
-            color: var(--gpk-yellow);
-            font-size: 1.5rem;
-            margin-top: 15px;
-        }
-
-        /* Collection Stats */
-        #collection-stats {
-            top: 20px;
-            left: 20px;
-            width: 250px;
-        }
-
-        .stat-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-
-              #enter-button {
+        #enter-button {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 15px 30px;
+            padding: 20px 40px;
             background: #ff3e41;
             color: #ffde37;
-            border: 4px solid #1a1a1a;
-            font-size: 2rem;
+            border: 5px solid #1a1a1a;
+            font-size: 2.5rem;
             cursor: pointer;
-            z-index: 100;
+            z-index: 10000;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
-        #ar-button {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            background: #2e86ab;
+        .ui-panel {
+            position: fixed;
+            background: rgba(26, 26, 26, 0.9);
+            border: 3px solid #ffde37;
+            border-radius: 10px;
+            padding: 15px;
+            z-index: 10000;
             color: white;
-            border: none;
+            max-width: 300px;
+        }
+        #card-details {
+            top: 20px;
+            right: 20px;
             display: none;
-            z-index: 100;
-        }
-
-        /* Responsive Adjustments */
-        @media (max-width: 768px) {
-            .nav-button {
-                padding: 10px 15px;
-                font-size: 1rem;
-            }
-            
-            #card-details, #collection-stats {
-                width: 90%;
-                left: 5%;
-                right: auto;
-            }
-            
-            #collection-stats {
-                top: auto;
-                bottom: 80px;
-            }
-        }
-
-        /* A-Frame Overrides */
-        a-scene {
-            position: fixed !important;
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        /* Animation Classes */
-        .pulse {
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .float {
-            animation: float 6s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-            100% { transform: translateY(0px); }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 </head>
 <body>
-<button id="enter-button">ENTER GPK VR GALLERY</button>
-    <button id="ar-button">START AR</button>
-
-    <<script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/VRControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/effects/VREffect.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/webxr/VRButton.js"></script>
-
-    <script>
-        // GPK CARD DATA
-        const cards = [
-            { id: 1, title: "Pompa Paulie", image: "PompaPaulie.png", position: [-3, 1.5, -4] },
-            { id: 2, title: "Ultra 3D", image: "20250503011555.png", position: [0, 1.5, -4] },
-            { id: 3, title: "OS10 Wrapper", image: "Os10_custom_wrapper.png", position: [3, 1.5, -4] }
-        ];
-
-        let scene, camera, renderer, controls;
-        const cardMeshes = [];
-
-        // INITIALIZE
-        document.getElementById('enter-button').addEventListener('click', initVRScene);
-
-        function initVRScene() {
-            document.getElementById('enter-button').style.display = 'none';
-            
-            // SCENE
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0xf5f5f0);
-            
-            // LIGHTS
-            const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(1, 1, 1);
-            scene.add(light);
-            scene.add(new THREE.AmbientLight(0x404040));
-            
-            // FLOOR
-            const floorGeometry = new THREE.PlaneGeometry(20, 20);
-            const floorMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x1a1a1a,
-                roughness: 0.8
-            });
-            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-            floor.rotation.x = -Math.PI / 2;
-            scene.add(floor);
-            
-            // WALLS
-            const wallGeometry = new THREE.PlaneGeometry(10, 5);
-            const wallMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0xff3e41,
-                side: THREE.DoubleSide
-            });
-            
-            const walls = [];
-            for (let i = 0; i < 4; i++) {
-                const wall = new THREE.Mesh(wallGeometry, wallMaterial);
-                wall.position.y = 2.5;
-                wall.rotation.y = i * Math.PI / 2;
-                wall.position.z = -5;
-                scene.add(wall);
-                walls.push(wall);
-            }
-            
-            // CARDS
-            cards.forEach(card => {
-                const texture = new THREE.TextureLoader().load(card.image);
-                const material = new THREE.MeshBasicMaterial({ 
-                    map: texture,
-                    transparent: true
-                });
-                const geometry = new THREE.PlaneGeometry(2, 3);
-                const mesh = new THREE.Mesh(geometry, material);
-                
-                mesh.position.set(...card.position);
-                mesh.userData = { title: card.title };
-                scene.add(mesh);
-                cardMeshes.push(mesh);
-            });
-            
-            // RENDERER
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.body.appendChild(renderer.domElement);
-            
-            // CAMERA
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 1.6, 3);
-            
-            // VR SETUP
-            renderer.xr.enabled = true;
-            document.body.appendChild(THREE.VRButton.createButton(renderer));
-            
-            // CONTROLS
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.target.set(0, 1.6, 0);
-            controls.update();
-            
-            // START RENDER LOOP
-            renderer.setAnimationLoop(() => {
-                renderer.render(scene, camera);
-            });
-            
-            // SHOW AR BUTTON IF AVAILABLE
-            if ('xr' in navigator) {
-                navigator.xr.isSessionSupported('immersive-ar').then(supported => {
-                    if (supported) {
-                        const arButton = document.getElementById('ar-button');
-                        arButton.style.display = 'block';
-                        arButton.addEventListener('click', () => {
-                            renderer.xr.setReferenceSpaceType('local');
-                            renderer.xr.isPresenting ? 
-                                renderer.xr.getSession().end() : 
-                                navigator.xr.requestSession('immersive-ar', {
-                                    requiredFeatures: ['hit-test']
-                                });
-                        });
-                    }
-                });
-            }
-        }
-        !-- UI Elements -->
-    <div id="nav-controls" class="ui-panel">
-        <button class="nav-button" id="explore-btn">EXPLORE</button>
-        <button class="nav-button" id="collection-btn">COLLECTION</button>
-        <button class="nav-button" id="gallery-btn">GALLERY</button>
-        <button class="nav-button" id="trade-btn">TRADE CENTER</button>
-    </div>
-
+    <button id="enter-button">ENTER VR GALLERY</button>
+    
     <div id="card-details" class="ui-panel">
-        <h2 class="card-title">CARD TITLE</h2>
-        <p class="card-info"><strong>Series:</strong> <span id="card-series">1</span></p>
-        <p class="card-info"><strong>Year:</strong> <span id="card-year">1985</span></p>
-        <p class="card-info"><strong>Condition:</strong> <span id="card-condition">Mint</span></p>
-        <p class="card-value">$<span id="card-value">125.00</span></p>
+        <h2 style="color:#ffde37;margin-bottom:10px;">CARD DETAILS</h2>
+        <p><strong>Title:</strong> <span id="card-title"></span></p>
+        <p><strong>Series:</strong> <span id="card-series"></span></p>
+        <p><strong>Value:</strong> $<span id="card-value"></span></p>
     </div>
 
-    <div id="collection-stats" class="ui-panel">
-        <h3>COLLECTION STATS</h3>
-        <div class="stat-item">
-            <span>Total Cards:</span>
-            <span id="total-cards">0</span>
-        </div>
-        <div class="stat-item">
-            <span>Total Value:</span>
-            <span id="total-value">$0.00</span>
-        </div>
-        <div class="stat-item">
-            <span>Rarest Card:</span>
-            <span id="rarest-card">None</span>
-        </div>
-        <div class="stat-item">
-            <span>Collection %:</span>
-            <span id="collection-percent">0%</span>
-        </div>
-    </div>
-
-    <!-- A-Frame Scene -->
-    <a-scene vr-mode-ui="enabled: false" loading-screen="enabled: false" renderer="colorManagement: true">
+    <a-scene vr-mode-ui="enabled: true" loading-screen="enabled: false" renderer="colorManagement: true">
         <!-- Environment -->
-        <a-entity environment="preset: starry; skyType: atmosphere; skyColor: #1A1A1A; horizonColor: #2E86AB; ground: hills; groundYScale: 5; groundTexture: walkernoise; groundColor: #222222; dressing: none"></a-entity>
-        
-        <!-- Lighting -->
-        <a-entity light="type: ambient; color: #444; intensity: 0.5"></a-entity>
-        <a-entity light="type: directional; color: #FFDE37; intensity: 0.8" position="-1 2 1"></a-entity>
-        <a-entity light="type: point; color: #FF3E41; intensity: 1; distance: 10; decay: 2" position="0 3 -5"></a-entity>
+        <a-entity environment="preset: starry; groundColor: #1a1a1a; grid: none"></a-entity>
         
         <!-- Camera Rig -->
-        <a-entity id="camera-rig" position="0 1.6 0">
-            <a-entity id="head" camera="active: true" look-controls="pointerLockEnabled: true" position="0 1.6 0" wasd-controls="acceleration: 100">
-                <a-entity cursor="fuse: true; fuseTimeout: 500" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: #FFDE37; shader: flat"></a-entity>
-            </a-entity>
-        </a-entity>
-        
-        <!-- Main Display Area -->
-        <a-entity id="main-display" position="0 1.5 -3">
-            <!-- Rotating GPK Logo -->
-            <a-entity id="gpk-logo" position="0 2 -3" scale="2 2 2" rotation="0 0 0" class="float">
-                <a-entity gltf-model="#logo-model" rotation="0 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 20000"></a-entity>
-            </a-entity>
-            
-            <!-- Card Display Cases -->
-            <a-entity id="display-case-1" position="-3 0.5 -4" rotation="0 30 0">
-                <a-box position="0 0.5 0" width="2" height="1" depth="1" material="src: #case-texture; metalness: 0.5; roughness: 0.1"></a-box>
-                <a-box position="0 1.5 0" width="2" height="2" depth="1" material="src: #glass-texture; opacity: 0.3; transparent: true"></a-box>
-                <a-entity id="featured-card-1" position="0 1.5 0" rotation="0 30 0" class="card-entity" data-card-id="1"></a-entity>
-                <a-entity light="type: point; color: #FFFFFF; intensity: 1; distance: 2" position="0 1.5 0"></a-entity>
-            </a-entity>
-            
-            <a-entity id="display-case-2" position="0 0.5 -5">
-                <a-box position="0 0.5 0" width="2" height="1" depth="1" material="src: #case-texture; metalness: 0.5; roughness: 0.1"></a-box>
-                <a-box position="0 1.5 0" width="2" height="2" depth="1" material="src: #glass-texture; opacity: 0.3; transparent: true"></a-box>
-                <a-entity id="featured-card-2" position="0 1.5 0" class="card-entity" data-card-id="2"></a-entity>
-                <a-entity light="type: point; color: #FFFFFF; intensity: 1; distance: 2" position="0 1.5 0"></a-entity>
-            </a-entity>
-            
-            <a-entity id="display-case-3" position="3 0.5 -4" rotation="0 -30 0">
-                <a-box position="0 0.5 0" width="2" height="1" depth="1" material="src: #case-texture; metalness: 0.5; roughness: 0.1"></a-box>
-                <a-box position="0 1.5 0" width="2" height="2" depth="1" material="src: #glass-texture; opacity: 0.3; transparent: true"></a-box>
-                <a-entity id="featured-card-3" position="0 1.5 0" rotation="0 -30 0" class="card-entity" data-card-id="3"></a-entity>
-                <a-entity light="type: point; color: #FFFFFF; intensity: 1; distance: 2" position="0 1.5 0"></a-entity>
-            </a-entity>
-            
-            <!-- Floating Cards -->
-            <a-entity id="floating-cards" position="0 2 -5">
-                <a-entity class="floating-card" position="-2 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 20000">
-                    <a-image class="clickable-card" src="#card-1-front" width="0.5" height="0.7" position="0 0 0" rotation="0 0 0" data-card-id="1"></a-image>
-                </a-entity>
-                <a-entity class="floating-card" position="0 0.5 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 25000; dir: reverse">
-                    <a-image class="clickable-card" src="#card-2-front" width="0.5" height="0.7" position="0 0 0" rotation="0 0 0" data-card-id="2"></a-image>
-                </a-entity>
-                <a-entity class="floating-card" position="2 0 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 30000">
-                    <a-image class="clickable-card" src="#card-3-front" width="0.5" height="0.7" position="0 0 0" rotation="0 0 0" data-card-id="3"></a-image>
+        <a-entity id="rig" movement-controls="speed: 0.5">
+            <a-entity camera look-controls="pointerLockEnabled: true" position="0 1.6 0">
+                <a-entity cursor="fuse: true; fuseTimeout: 500" 
+                          position="0 0 -1"
+                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                          material="color: #ffde37; shader: flat">
                 </a-entity>
             </a-entity>
         </a-entity>
         
-        <!-- Gallery Wall -->
-        <a-entity id="gallery-wall" position="0 1.5 -10" visible="false">
-            <a-entity id="gallery-grid" layout="type: grid; columns: 5; margin: 0.5" position="0 1.5 0">
-                <!-- Gallery cards will be dynamically added here -->
+        <!-- Floating Cards on Walls -->
+        <a-entity id="north-wall" position="0 1.5 -4" rotation="0 0 0">
+            <a-entity class="card" position="-2 1.5 0" rotation="0 0 0" data-card="1">
+                <a-image src="#card1" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card" position="0 1.5 0" rotation="0 0 0" data-card="2">
+                <a-image src="#card2" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card" position="2 1.5 0" rotation="0 0 0" data-card="3">
+                <a-image src="#card3" width="0.8" height="1.1"></a-image>
             </a-entity>
         </a-entity>
         
-        <!-- Trade Center -->
-        <a-entity id="trade-center" position="0 1.5 5" rotation="0 180 0" visible="false">
-            <a-plane position="0 1.5 -1" width="8" height="4" color="#1A1A1A" opacity="0.8"></a-plane>
-            <a-text value="TRADE CENTER" position="0 3 -0.9" color="#FFDE37" align="center" width="6" font="mozillavr"></a-text>
-            <a-entity id="trade-table" position="0 1 -0.5">
-                <a-circle position="-1.5 0 0" radius="0.5" color="#FF3E41" opacity="0.8"></a-circle>
-                <a-circle position="1.5 0 0" radius="0.5" color="#2E86AB" opacity="0.8"></a-circle>
-                <a-entity id="your-trade-card" position="-1.5 0.1 0"></a-entity>
-                <a-entity id="their-trade-card" position="1.5 0.1 0"></a-entity>
-                <a-text value="YOUR CARD" position="-1.5 -0.5 0" color="#FFDE37" align="center" width="1"></a-text>
-                <a-text value="THEIR CARD" position="1.5 -0.5 0" color="#FFDE37" align="center" width="1"></a-text>
-            </a-entity>
-            <a-entity id="trade-controls" position="0 0.5 -0.5" layout="type: line; margin: 0.5">
-                <a-text class="clickable" value="OFFER TRADE" color="#FFDE37" align="center" width="2" onclick="offerTrade()"></a-text>
-                <a-text class="clickable" value="CANCEL" color="#FF3E41" align="center" width="2" onclick="cancelTrade()"></a-text>
+        <a-entity id="east-wall" position="4 1.5 0" rotation="0 -90 0">
+            <a-entity class="card" position="0 1.5 -2" rotation="0 0 0" data-card="4">
+                <a-image src="#card4" width="0.8" height="1.1"></a-image>
             </a-entity>
         </a-entity>
         
-        <!-- Audio -->
-        <a-sound src="#background-music" autoplay="true" loop="true" volume="0.3"></a-sound>
-        <a-sound src="#card-flip-sound" id="flip-sound"></a-sound>
+        <a-entity id="south-wall" position="0 1.5 4" rotation="0 180 0">
+            <a-entity class="card" position="-2 1.5 0" rotation="0 0 0" data-card="5">
+                <a-image src="#card5" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
+        
+        <a-entity id="west-wall" position="-4 1.5 0" rotation="0 90 0">
+            <a-entity class="card" position="0 1.5 -2" rotation="0 0 0" data-card="6">
+                <a-image src="#card6" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
+        
+        <!-- Centerpiece -->
+        <a-entity position="0 1.5 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 60000">
+            <a-image src="#featured-card" width="1.5" height="2.1" position="0 1.5 -0.5"></a-image>
+        </a-entity>
         
         <!-- Assets -->
         <a-assets>
-            <!-- Textures -->
-            <img id="card-1-front" src="PompaPaulie.png">
-            <img id="card-1-back" src="20250428204923.png">
-            <img id="card-2-front" src="https://example.com/card2-front.jpg">
-            <img id="card-2-back" src="https://example.com/card2-back.jpg">
-            <img id="card-3-front" src="https://example.com/card3-front.jpg">
-            <img id="card-3-back" src="https://example.com/card3-back.jpg">
-            <img id="case-texture" src="https://example.com/metal-texture.jpg">
-            <img id="glass-texture" src="https://example.com/glass-texture.png">
-            
-            <!-- 3D Models -->
-            <a-asset-item id="logo-model" src="https://example.com/gpk-logo.glb"></a-asset-item>
-            
-            <!-- Audio -->
-            <audio id="background-music" src="https://example.com/background-music.mp3" preload="auto"></audio>
-            <audio id="card-flip-sound" src="https://example.com/card-flip.mp3" preload="auto"></audio>
+            <!-- Replace these with your actual card images -->
+            <img id="card1" src="PompaPaulie.png">
+            <img id="card2" src="20250503011555.png">
+            <img id="card3" src="Os10_custom_wrapper.png">
+            <img id="card4" src="20250503012558.png">
+            <img id="card5" src="20250503022823.png">
+            <img id="card6" src="20250503032454.png">
+            <img id="featured-card" src="PompaPaulie.png">
         </a-assets>
     </a-scene>
 
     <script>
-        // Card data
-        const cardData = [
-            {
-                id: 1,
-                title: "OS1 Custom Pack",
-                series: 1,
-                year: 1985,
-                imageUrl: "PompaPaulie.png",
-                backImage: "20250428204923.png",
-                value: 125.00,
-                condition: "Mint",
-                rarity: "Ultra Rare"
-            },
-            {
-                id: 2,
-                title: "Wacky Packages 2024",
-                series: 15,
-                year: 2024,
-                imageUrl: "https://example.com/card2-front.jpg",
-                backImage: "https://example.com/card2-back.jpg",
-                value: 89.99,
-                condition: "Near Mint",
-                rarity: "Rare"
-            },
-            {
-                id: 3,
-                title: "Garbage Pail Kids OS2",
-                series: 2,
-                year: 1985,
-                imageUrl: "https://example.com/card3-front.jpg",
-                backImage: "https://example.com/card3-back.jpg",
-                value: 199.99,
-                condition: "Gem Mint",
-                rarity: "Super Rare"
-            }
-            // Additional cards can be added here
-        ];
+        // Card data - replace with your actual collection
+        const cardData = {
+            "1": { title: "Pompa Paulie", series: "Ultra 3D", value: 150.00 },
+            "2": { title: "Ultra 3D", series: "Series 2025", value: 125.00 },
+            "3": { title: "OS10 Wrapper", series: "Vintage", value: 200.00 },
+            "4": { title: "3D Special", series: "Series 2025", value: 175.00 },
+            "5": { title: "Rare Edition", series: "Ultra 3D", value: 225.00 },
+            "6": { title: "Collector's Item", series: "Vintage", value: 250.00 }
+        };
 
-        // Global state
-        let currentView = 'main';
-        let selectedCardId = null;
-        let tradeMode = false;
-        let yourTradeCard = null;
-        let theirTradeCard = null;
-
-        // Initialize the scene when loaded
-        document.querySelector('a-scene').addEventListener('loaded', function() {
-            // Hide loading screen
-            document.getElementById('loading-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loading-screen').style.display = 'none';
-            }, 1000);
-            
-            // Initialize UI
-            setupUI();
-            
-            // Load collection stats
-            updateCollectionStats();
-            
-            // Set up card interactions
+        // Initialize scene
+        document.getElementById('enter-button').addEventListener('click', function() {
+            this.style.display = 'none';
             setupCardInteractions();
         });
 
-        function setupUI() {
-            // Navigation buttons
-            document.getElementById('explore-btn').addEventListener('click', () => {
-                switchView('main');
-            });
-            
-            document.getElementById('collection-btn').addEventListener('click', () => {
-                switchView('gallery');
-            });
-            
-            document.getElementById('gallery-btn').addEventListener('click', () => {
-                switchView('gallery');
-            });
-            
-            document.getElementById('trade-btn').addEventListener('click', () => {
-                switchView('trade');
-            });
-        }
-
-        function switchView(view) {
-            if (currentView === view) return;
-            
-            currentView = view;
-            
-            // Hide all views first
-            document.getElementById('main-display').setAttribute('visible', 'false');
-            document.getElementById('gallery-wall').setAttribute('visible', 'false');
-            document.getElementById('trade-center').setAttribute('visible', 'false');
-            
-            // Show the selected view
-            switch(view) {
-                case 'main':
-                    document.getElementById('main-display').setAttribute('visible', 'true');
-                    // Move camera to main view
-                    document.getElementById('camera-rig').setAttribute('animation', {
-                        property: 'position',
-                        to: '0 1.6 0',
-                        dur: 1000,
-                        easing: 'easeInOutQuad'
-                    });
-                    break;
-                    
-                case 'gallery':
-                    document.getElementById('gallery-wall').setAttribute('visible', 'true');
-                    // Move camera to gallery view
-                    document.getElementById('camera-rig').setAttribute('animation', {
-                        property: 'position',
-                        to: '0 1.6 -7',
-                        dur: 1000,
-                        easing: 'easeInOutQuad'
-                    });
-                    // Populate gallery if empty
-                    if (document.getElementById('gallery-grid').children.length === 0) {
-                        populateGallery();
-                    }
-                    break;
-                    
-                case 'trade':
-                    document.getElementById('trade-center').setAttribute('visible', 'true');
-                    // Move camera to trade center
-                    document.getElementById('camera-rig').setAttribute('animation', {
-                        property: 'position',
-                        to: '0 1.6 2',
-                        dur: 1000,
-                        easing: 'easeInOutQuad'
-                    });
-                    tradeMode = true;
-                    break;
-            }
-        }
-
         function setupCardInteractions() {
             // Add click handlers to all cards
-            document.querySelectorAll('.clickable-card').forEach(card => {
-                card.addEventListener('click', function(evt) {
-                    if (tradeMode) {
-                        handleTradeSelection(this);
-                    } else {
-                        showCardDetails(this.getAttribute('data-card-id'));
-                    }
+            document.querySelectorAll('.card').forEach(card => {
+                card.addEventListener('click', function() {
+                    const cardId = this.getAttribute('data-card');
+                    showCardDetails(cardId);
+                    
+                    // Add pulse animation
+                    this.setAttribute('animation', {
+                        property: 'scale',
+                        to: '1.1 1.1 1.1',
+                        dur: 300,
+                        easing: 'easeInOutQuad',
+                        dir: 'alternate'
+                    });
                 });
             });
         }
 
         function showCardDetails(cardId) {
-            const card = cardData.find(c => c.id == cardId);
+            const card = cardData[cardId];
             if (!card) return;
             
-            // Update card details panel
+            // Update UI
             document.getElementById('card-title').textContent = card.title;
             document.getElementById('card-series').textContent = card.series;
-            document.getElementById('card-year').textContent = card.year;
-            document.getElementById('card-condition').textContent = card.condition;
             document.getElementById('card-value').textContent = card.value.toFixed(2);
             
-            // Show the panel
+            // Show panel
             document.getElementById('card-details').style.display = 'block';
             
-            // Flip animation for the card
-            const cardElement = document.querySelector(`.card-entity[data-card-id="${cardId}"]`);
-            if (cardElement) {
-                cardElement.setAttribute('animation', {
-                    property: 'rotation',
-                    to: '0 180 0',
-                    dur: 500,
-                    easing: 'easeInOutQuad'
-                });
-                
-                // Play flip sound
-                document.getElementById('flip-sound').components.sound.playSound();
-                
-                // Change texture after half the animation
-                setTimeout(() => {
-                    const front = cardElement.querySelector('a-image[src*="front"]');
-                    const back = cardElement.querySelector('a-image[src*="back"]');
-                    if (front && back) {
-                        front.setAttribute('visible', 'false');
-                        back.setAttribute('visible', 'true');
-                    }
-                }, 250);
-            }
-        }
-
-        function updateCollectionStats() {
-            // Calculate stats
-            const totalCards = cardData.length;
-            const totalValue = cardData.reduce((sum, card) => sum + card.value, 0);
-            const rarestCard = cardData.reduce((rare, card) => 
-                (!rare || card.value > rare.value) ? card : rare, null);
-            
-            // Update UI
-            document.getElementById('total-cards').textContent = totalCards;
-            document.getElementById('total-value').textContent = '$' + totalValue.toFixed(2);
-            document.getElementById('rarest-card').textContent = rarestCard ? rarestCard.title : 'None';
-            document.getElementById('collection-percent').textContent = 
-                Math.round((totalCards / 500) * 100) + '%'; // Assuming 500 cards in complete collection
-        }
-
-        function populateGallery() {
-            const gallery = document.getElementById('gallery-grid');
-            
-            cardData.forEach(card => {
-                const cardEntity = document.createElement('a-entity');
-                cardEntity.setAttribute('class', 'gallery-card');
-                cardEntity.setAttribute('position', '0 0 0');
-                cardEntity.setAttribute('rotation', '0 0 0');
-                cardEntity.setAttribute('data-card-id', card.id);
-                
-                const cardImage = document.createElement('a-image');
-                cardImage.setAttribute('src', `#card-${card.id}-front`);
-                cardImage.setAttribute('width', '0.8');
-                cardImage.setAttribute('height', '1.12');
-                cardImage.setAttribute('class', 'clickable-card');
-                cardImage.setAttribute('data-card-id', card.id);
-                
-                cardEntity.appendChild(cardImage);
-                gallery.appendChild(cardEntity);
-            });
-        }
-
-        function handleTradeSelection(cardElement) {
-            const cardId = cardElement.getAttribute('data-card-id');
-            const card = cardData.find(c => c.id == cardId);
-            
-            if (!yourTradeCard) {
-                // Select your card for trade
-                yourTradeCard = cardId;
-                const yourTradeSpot = document.getElementById('your-trade-card');
-                
-                // Clear previous card
-                while (yourTradeSpot.firstChild) {
-                    yourTradeSpot.removeChild(yourTradeSpot.firstChild);
-                }
-                
-                // Add new card
-                const tradeCard = document.createElement('a-image');
-                tradeCard.setAttribute('src', `#card-${cardId}-front`);
-                tradeCard.setAttribute('width', '0.8');
-                tradeCard.setAttribute('height', '1.12');
-                yourTradeSpot.appendChild(tradeCard);
-                
-            } else if (!theirTradeCard) {
-                // Select their card for trade
-                theirTradeCard = cardId;
-                const theirTradeSpot = document.getElementById('their-trade-card');
-                
-                // Clear previous card
-                while (theirTradeSpot.firstChild) {
-                    theirTradeSpot.removeChild(theirTradeSpot.firstChild);
-                }
-                
-                // Add new card
-                const tradeCard = document.createElement('a-image');
-                tradeCard.setAttribute('src', `#card-${cardId}-front`);
-                tradeCard.setAttribute('width', '0.8');
-                tradeCard.setAttribute('height', '1.12');
-                theirTradeSpot.appendChild(tradeCard);
-            }
-        }
-
-        function offerTrade() {
-            if (yourTradeCard && theirTradeCard) {
-                alert(`Trade offered! Your card (ID: ${yourTradeCard}) for their card (ID: ${theirTradeCard})`);
-                resetTrade();
-            } else {
-                alert('Please select both cards for trade');
-            }
-        }
-
-        function cancelTrade() {
-            resetTrade();
-        }
-
-        function resetTrade() {
-            yourTradeCard = null;
-            theirTradeCard = null;
-            
-            // Clear trade spots
-            const yourTradeSpot = document.getElementById('your-trade-card');
-            const theirTradeSpot = document.getElementById('their-trade-card');
-            
-            while (yourTradeSpot.firstChild) {
-                yourTradeSpot.removeChild(yourTradeSpot.firstChild);
-            }
-            
-            while (theirTradeSpot.firstChild) {
-                theirTradeSpot.removeChild(theirTradeSpot.firstChild);
-            }
+            // Hide after 5 seconds
+            setTimeout(() => {
+                document.getElementById('card-details').style.display = 'none';
+            }, 5000);
         }
     </script>
 </body>
