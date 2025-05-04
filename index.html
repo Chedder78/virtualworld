@@ -1,3 +1,162 @@
+
+
+
+
+    <button box-color: blue, line-color: red, box-shadow: opaque gray, ><title>GPK VR Gallery</title></button>
+    <style>
+        #enter-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 15px 30px;
+            background: #ff3e41;
+            color: #ffde37;
+            border: 4px solid #1a1a1a;
+            font-size: 2rem;
+            cursor: pointer;
+            z-index: 100;
+        }
+        #ar-button {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            background: #2e86ab;
+            color: white;
+            border: none;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+</head>
+<body>
+    <button id="enter-button">ENTER GPK VR GALLERY</button>
+    <button id="ar-button">START AR</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/VRControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/effects/VREffect.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/webxr/VRButton.js"></script>
+
+    <script>
+        // GPK CARD DATA
+        const cards = [
+            { id: 1, title: "Pompa Paulie", image: "PompaPaulie.png", position: [-3, 1.5, -4] },
+            { id: 2, title: "Ultra 3D", image: "20250503011555.png", position: [0, 1.5, -4] },
+            { id: 3, title: "OS10 Wrapper", image: "Os10_custom_wrapper.png", position: [3, 1.5, -4] }
+        ];
+
+        let scene, camera, renderer, controls;
+        const cardMeshes = [];
+
+        // INITIALIZE
+        document.getElementById('enter-button').addEventListener('click', initVRScene);
+
+        function initVRScene() {
+            document.getElementById('enter-button').style.display = 'none';
+            
+            // SCENE
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5f0);
+            
+            // LIGHTS
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(1, 1, 1);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+            
+            // FLOOR
+            const floorGeometry = new THREE.PlaneGeometry(20, 20);
+            const floorMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a1a,
+                roughness: 0.8
+            });
+            const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+            floor.rotation.x = -Math.PI / 2;
+            scene.add(floor);
+            
+            // WALLS
+            const wallGeometry = new THREE.PlaneGeometry(10, 5);
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xff3e41,
+                side: THREE.DoubleSide
+            });
+            
+            const walls = [];
+            for (let i = 0; i < 4; i++) {
+                const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+                wall.position.y = 2.5;
+                wall.rotation.y = i * Math.PI / 2;
+                wall.position.z = -5;
+                scene.add(wall);
+                walls.push(wall);
+            }
+            
+            // CARDS
+            cards.forEach(card => {
+                const texture = new THREE.TextureLoader().load(card.image);
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: texture,
+                    transparent: true
+                });
+                const geometry = new THREE.PlaneGeometry(2, 3);
+                const mesh = new THREE.Mesh(geometry, material);
+                
+                mesh.position.set(...card.position);
+                mesh.userData = { title: card.title };
+                scene.add(mesh);
+                cardMeshes.push(mesh);
+            });
+            
+            // RENDERER
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+            
+            // CAMERA
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(0, 1.6, 3);
+            
+            // VR SETUP
+            renderer.xr.enabled = true;
+            document.body.appendChild(THREE.VRButton.createButton(renderer));
+            
+            // CONTROLS
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.target.set(0, 1.6, 0);
+            controls.update();
+            
+            // START RENDER LOOP
+            renderer.setAnimationLoop(() => {
+                renderer.render(scene, camera);
+            });
+            
+            // SHOW AR BUTTON IF AVAILABLE
+            if ('xr' in navigator) {
+                navigator.xr.isSessionSupported('immersive-ar').then(supported => {
+                    if (supported) {
+                        const arButton = document.getElementById('ar-button');
+                        arButton.style.display = 'block';
+                        arButton.addEventListener('click', () => {
+                            renderer.xr.setReferenceSpaceType('local');
+                            renderer.xr.isPresenting ? 
+                                renderer.xr.getSession().end() : 
+                                navigator.xr.requestSession('immersive-ar', {
+                                    requiredFeatures: ['hit-test']
+                                });
+                        });
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>
+----------
 <!DOCTYPE html>
 <html lang="en">
 <head>
