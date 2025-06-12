@@ -70,6 +70,15 @@
                 </a-entity>
             </a-entity>
         </a-entity>
+        <a-entity
+  id="retro-bot"
+  gltf-model="#retro-glasses-bot"
+  position="1 0 -2"
+  scale="1.2 1.2 1.2"
+  rotation="0 180 0"
+  animation-mixer>
+</a-entity>
+
         <!-- Floating Cards on Walls -->
 <!-- north -->
 <a-entity id="north-wall" position="0 1.5 -4" rotation="0 0 0">
@@ -130,9 +139,7 @@
         
         <!-- Assets -->
         <a-assets>
-            <a-asset-item id="futuristic-model" src="https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models/2.0/RobotExpressive/glTF-Binary/RobotExpressive.glb"></a-asset-item>
-
-            <!-- Replace these with your actual card images -->
+             <!-- Replace these with your actual card images -->
             <img id="card1" src="PompaPaulie.png">
             <img id="card2" src="20250503011555.png">
             <img id="card3" src="20250503034156.png">
@@ -146,7 +153,10 @@
             <img id="card11" src="">
             <img id="card12" src="">
             <img id="featured-card" src="PompaPaulie.png">
+       
         </a-assets>
+        <a-asset-item id="retro-glasses-bot" src="https://sketchfab.com/models/a65a04e20afa4b0b90c76bdf48a7a5fb/download?format=glb"></a-asset-item>
+
         <a-entity 
   id="futuristic-character"
   gltf-model="#futuristic-model"
@@ -157,6 +167,22 @@
 </a-entity>
 
     </a-scene>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  ['robot-comp','retro-bot'].forEach(id => {
+    const bot = document.getElementById(id);
+    bot.addEventListener('click', () => {
+      const y = bot.getAttribute('rotation').y;
+      bot.setAttribute('animation', {
+        property: 'rotation',
+        to: `0 ${y + 360} 0`,
+        dur: 2000,
+        easing: 'easeInOutQuad'
+      });
+    });
+  });
+});
+</script>
 
     <script>
         // Card data - replace with your actual collection
