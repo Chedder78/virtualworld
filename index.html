@@ -4,18 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>GPK ULTRA 3D | Immersive Collector's Hub</title>
-    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://unpkg.com/aframe-environment-component@1.3.0/dist/aframe-environment-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
-<!-- Add to <head> section -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-<script src="MapSystem.js"></script>
     <style>
         body {
             margin: 0;
             overflow: hidden;
             font-family: 'Bangers', cursive;
+            background-color: #1a1a1a;
         }
         #enter-button {
             position: absolute;
@@ -33,25 +27,45 @@
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             font-family: 'Bangers', cursive;
             transition: transform 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
         }
         #enter-button:hover {
             transform: translate(-50%, -50%) scale(1.05);
+            background: #ff6b6e;
         }
-        #enter-button:focus {
-            outline: 3px solid #ffde37;
-            outline-offset: 2px;
-        }
-        #loading-status {
+        #loading-screen {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            color: white;
-            background: rgba(0,0,0,0.7);
-            padding: 10px;
-            border-radius: 5px;
-            z-index: 10000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            color: #ffde37;
+            font-family: 'Bangers', cursive;
+        }
+        #loading-screen.hidden {
             display: none;
-            font-family: Arial, sans-serif;
+        }
+        .progress-bar {
+            width: 300px;
+            height: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 20px;
+            overflow: hidden;
+            border: 2px solid #ffde37;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ff3e41;
+            width: 0%;
+            transition: width 0.3s;
         }
         .ui-panel {
             position: fixed;
@@ -65,32 +79,30 @@
             font-family: Arial, sans-serif;
             backdrop-filter: blur(5px);
             pointer-events: none;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
         }
         #card-details {
             top: 20px;
             right: 20px;
             display: none;
-            pointer-events: none;
         }
-        .error-message {
+        #vr-button {
             position: absolute;
             bottom: 20px;
             right: 20px;
-            color: #ff3e41;
-            background: rgba(0,0,0,0.8);
-            padding: 10px;
+            padding: 10px 20px;
+            background: #ff3e41;
+            color: #ffde37;
+            border: 2px solid #ffde37;
             border-radius: 5px;
-            z-index: 10001;
-            display: none;
-            max-width: 300px;
-            font-family: Arial, sans-serif;
+            cursor: pointer;
+            z-index: 10000;
+            font-family: 'Bangers', cursive;
+            font-size: 1.2rem;
         }
-        /* Accessibility - keyboard focus styles */
-        *:focus-visible {
-            outline: 3px solid #ffde37;
-            outline-offset: 2px;
+        #vr-button:hover {
+            background: #ff6b6e;
         }
-        /* Mobile optimization */
         @media (max-width: 768px) {
             #enter-button {
                 font-size: 1.8rem;
@@ -101,383 +113,493 @@
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 </head>
 <body>
-    <button id="enter-button" aria-label="Enter VR Gallery">ENTER VR GALLERY</button>
-    <div id="loading-status">Loading assets... <span id="loading-progress">0%</span></div>
-    <div id="error-message" class="error-message"></div>
+    <div id="loading-screen">
+        <h1 style="font-size: 3rem; margin-bottom: 20px;">GPK ULTRA 3D</h1>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div id="loading-text">Loading Gallery...</div>
+    </div>
     
-    <div id="card-details" class="ui-panel" role="complementary" aria-live="polite">
+    <button id="enter-button">ENTER VR GALLERY</button>
+    <button id="vr-button" style="display: none;">ENTER VR MODE</button>
+    
+    <div id="card-details" class="ui-panel">
         <h2 style="color:#ffde37;margin-bottom:10px;">CARD DETAILS</h2>
         <p><strong>Title:</strong> <span id="card-title"></span></p>
         <p><strong>Series:</strong> <span id="card-series"></span></p>
         <p><strong>Value:</strong> $<span id="card-value"></span></p>
     </div>
 
-    <a-scene 
-        vr-mode-ui="enabled: true" 
-        loading-screen="enabled: true; dotsColor: #ffde37; backgroundColor: #1a1a1a"
-        renderer="colorManagement: true; antialias: true"
-        device-orientation-permission-ui="enabled: true">
+    <!-- Include Three.js and required libraries -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="MapSystem.js"></script>
+    <script src="components/xr-ui.js"></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { VRButton } from 'three/addons/webxr/VRButton.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // Initialize scene, camera, renderer
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x1a1a1a);
         
-        <!-- Environment -->
-        <a-entity environment="preset: starry; groundColor: #1a1a1a; grid: none"></a-entity>
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 1.6, 5);
         
-        <!-- Camera Rig with proper movement controls -->
-        <a-entity id="rig" movement-controls="speed: 0.5; controls: keyboard, touch">
-            <a-entity camera look-controls="pointerLockEnabled: true" position="0 1.6 0">
-                <a-entity cursor="fuse: true; fuseTimeout: 500" 
-                          position="0 0 -1"
-                          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                          material="color: #ffde37; shader: flat"
-                          raycaster="objects: .clickable; far: 20"
-                          event-set__mouseenter="_event: mouseenter; material.color: #ff3e41; scale: 1.2 1.2 1.2"
-                          event-set__mouseleave="_event: mouseleave; material.color: #ffde37; scale: 1 1 1">
-                </a-entity>
-            </a-entity>
-        </a-entity>
-
-        <!-- Floating Cards on Walls -->
-        <!-- north -->
-        <a-entity id="north-wall" position="0 1.5 -4" rotation="0 0 0">
-            <a-entity class="card clickable" position="-2 1.5 0" rotation="0 0 0" data-card="1">
-                <a-image src="#card1" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="2">
-                <a-image src="#card2" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="2 1.5 0" rotation="0 0 0" data-card="3">
-                <a-image src="#card3" width="0.8" height="1.1"></a-image>
-            </a-entity>
-        </a-entity>
-
-        <!-- east -->
-        <a-entity id="east-wall" position="4 1.5 0" rotation="0 -90 0">
-            <a-entity class="card clickable" position="0 1.5 -2" rotation="0 0 0" data-card="4">
-                <a-image src="#card4" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="5">
-                <a-image src="#card5" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 2" rotation="0 0 0" data-card="6">
-                <a-image src="#card6" width="0.8" height="1.1"></a-image>
-            </a-entity>
-        </a-entity>
-
-        <!-- south -->
-        <a-entity id="south-wall" position="0 1.5 4" rotation="0 180 0">
-            <a-entity class="card clickable" position="-2 1.5 0" rotation="0 0 0" data-card="7">
-                <a-image src="#card7" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="8">
-                <a-image src="#card8" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="2 1.5 0" rotation="0 0 0" data-card="9">
-                <a-image src="#card9" width="0.8" height="1.1"></a-image>
-            </a-entity>
-        </a-entity>
-
-        <!-- west -->
-        <a-entity id="west-wall" position="-4 1.5 0" rotation="0 90 0">
-            <a-entity class="card clickable" position="0 1.5 -2" rotation="0 0 0" data-card="10">
-                <a-image src="#card10" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="11">
-                <a-image src="#card11" width="0.8" height="1.1"></a-image>
-            </a-entity>
-            <a-entity class="card clickable" position="0 1.5 2" rotation="0 0 0" data-card="12">
-                <a-image src="#card12" width="0.8" height="1.1"></a-image>
-            </a-entity>
-        </a-entity>
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.xr.enabled = true;
+        document.body.appendChild(renderer.domElement);
         
-        <!-- Centerpiece -->
-        <a-entity position="0 1.5 0" animation__rotation="property: rotation; to: 0 360 0; loop: true; dur: 60000; easing: linear">
-            <a-image src="#featured-card" width="1.5" height="2.1" position="0 1.5 -0.5"></a-image>
-        </a-entity>
+        // CSS2 Renderer for labels
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.left = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.body.appendChild(labelRenderer.domElement);
         
-        <!-- 3D Character - Optional, will gracefully fail if model unavailable -->
-        <a-entity 
-            id="futuristic-character"
-            gltf-model="#futuristic-model"
-            position="1 0 -3"
-            scale="2 2 2"
-            rotation="0 180 0"
-            class="clickable"
-            animation-mixer
-            fallback-component="fallback-model">
-        </a-entity>
-
-        <!-- Fallback for 3D model -->
-        <a-entity id="fallback-model" position="1 0 -3" scale="2 2 2" rotation="0 180 0" class="clickable" visible="false">
-            <a-box color="#ff3e41" width="0.8" height="1.6" depth="0.4"></a-box>
-            <a-sphere color="#ffde37" radius="0.3" position="0 1 0"></a-sphere>
-            <a-text value="GPK" align="center" position="0 1.2 0.21" color="#1a1a1a" width="1"></a-text>
-        </a-entity>
-
-        <!-- Assets -->
-        <a-assets timeout="10000">
-            <!-- Card Images -->
-            <img id="card1" src="PompaPaulie.png" crossorigin="anonymous">
-            <img id="card2" src="20250503011555.png" crossorigin="anonymous">
-            <img id="card3" src="20250503034156.png" crossorigin="anonymous">
-            <img id="card4" src="20250503012558.png" crossorigin="anonymous">
-            <img id="card5" src="20250503022823.png" crossorigin="anonymous">
-            <img id="card6" src="20250503032454.png" crossorigin="anonymous">
-            <img id="card7" src="20250503035601.png" crossorigin="anonymous">
-            <img id="card8" src="20250503214217.png" crossorigin="anonymous">
-            <img id="card9" src="20250503212559.png" crossorigin="anonymous">
-            <img id="card10" src="20250507032544.png" crossorigin="anonymous">
-            <img id="card11" src="https://placehold.co/400x550/ff3e41/ffde37?text=Coming+Soon" crossorigin="anonymous">
-            <img id="card12" src="https://placehold.co/400x550/ff3e41/ffde37?text=Coming+Soon" crossorigin="anonymous">
-            <img id="featured-card" src="PompaPaulie.png" crossorigin="anonymous">
+        // Add VR button
+        const vrButton = VRButton.createButton(renderer);
+        vrButton.style.position = 'absolute';
+        vrButton.style.bottom = '20px';
+        vrButton.style.left = '20px';
+        vrButton.style.zIndex = '10000';
+        document.body.appendChild(vrButton);
+        
+        // Controls for non-VR mode
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.5;
+        controls.enableZoom = true;
+        controls.target.set(0, 1.5, 0);
+        
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        const directionalLight = new THREE.DirectionalLight(0xffde37, 1);
+        directionalLight.position.set(2, 5, 3);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        scene.add(directionalLight);
+        
+        const fillLight = new THREE.PointLight(0x4466ff, 0.5);
+        fillLight.position.set(-2, 3, 2);
+        scene.add(fillLight);
+        
+        const backLight = new THREE.PointLight(0xff3e41, 0.3);
+        backLight.position.set(0, 2, -5);
+        scene.add(backLight);
+        
+        // Add stars background
+        const starsGeometry = new THREE.BufferGeometry();
+        const starsCount = 3000;
+        const starPositions = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount * 3; i += 3) {
+            starPositions[i] = (Math.random() - 0.5) * 200;
+            starPositions[i+1] = (Math.random() - 0.5) * 200;
+            starPositions[i+2] = (Math.random() - 0.5) * 200;
+        }
+        starsGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+        const starsMaterial = new THREE.PointsMaterial({color: 0xffffff, size: 0.1});
+        const stars = new THREE.Points(starsGeometry, starsMaterial);
+        scene.add(stars);
+        
+        // Floor
+        const floorGeometry = new THREE.CircleGeometry(10, 32);
+        const floorMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x1a1a1a, 
+            roughness: 0.7, 
+            metalness: 0.1,
+            side: THREE.DoubleSide
+        });
+        const floor = new THREE.Mesh(floorGeometry, floorMaterial);
+        floor.rotation.x = -Math.PI / 2;
+        floor.position.y = 0;
+        floor.receiveShadow = true;
+        scene.add(floor);
+        
+        // Grid helper
+        const gridHelper = new THREE.GridHelper(20, 20, 0xffde37, 0x444444);
+        gridHelper.position.y = 0.01;
+        scene.add(gridHelper);
+        
+        // Card data
+        const cardData = {
+            "1": { title: "Pompa Paulie", series: "GPK Ultra 3D", value: 150.00 },
+            "2": { title: "Atomic Adam", series: "GPK Ultra 3D", value: 125.00 },
+            "3": { title: "Bionic Betty", series: "GPK Ultra 3D", value: 200.00 },
+            "4": { title: "Cosmic Carl", series: "GPK Ultra 3D", value: 175.00 },
+            "5": { title: "Digital Dave", series: "GPK Ultra 3D", value: 225.00 },
+            "6": { title: "Electric Eve", series: "GPK Ultra 3D", value: 250.00 },
+            "7": { title: "Fusion Frank", series: "GPK Ultra 3D", value: 200.00 },
+            "8": { title: "Gamma Gary", series: "GPK Ultra 3D", value: 275.00 },
+            "9": { title: "Hologram Helen", series: "GPK Ultra 3D", value: 300.00 },
+            "10": { title: "Ion Ivan", series: "GPK Ultra 3D", value: 325.00 },
+            "11": { title: "Jupiter Jane", series: "GPK Ultra 3D", value: 250.00 },
+            "12": { title: "Kinetic Kyle", series: "GPK Ultra 3D", value: 225.00 },
+        };
+        
+        // Loading manager
+        const loadingManager = new THREE.LoadingManager();
+        const progressFill = document.getElementById('progress-fill');
+        const loadingText = document.getElementById('loading-text');
+        const loadingScreen = document.getElementById('loading-screen');
+        
+        loadingManager.onProgress = (url, itemsLoaded, itemsTotal) => {
+            const progress = (itemsLoaded / itemsTotal) * 100;
+            progressFill.style.width = progress + '%';
+            loadingText.textContent = `Loading: ${Math.round(progress)}%`;
+        };
+        
+        loadingManager.onLoad = () => {
+            loadingScreen.classList.add('hidden');
+            document.getElementById('enter-button').style.display = 'block';
+        };
+        
+        // Texture loader
+        const textureLoader = new THREE.TextureLoader(loadingManager);
+        
+        // Card image sources
+        const cardImages = [
+            'PompaPaulie.png',
+            '20250503011555.png',
+            '20250503034156.png',
+            '20250503012558.png',
+            '20250503022823.png',
+            '20250503032454.png',
+            '20250503035601.png',
+            '20250503214217.png',
+            '20250503212559.png',
+            '20250507032544.png',
+            null, // placeholder for card 11
+            null  // placeholder for card 12
+        ];
+        
+        // Create walls with cards
+        function createWallWithCards(position, rotation, startIndex) {
+            const wallGroup = new THREE.Group();
             
-            <!-- 3D Model - Using a reliable CDN with fallback -->
-            <a-asset-item id="futuristic-model" 
-                          src="https://raw.githubusercontent.com/aframevr/sample-assets/master/assets/models/character.glb"
-                          response-type="arraybuffer">
-            </a-asset-item>
-        </a-assets>
-    </a-scene>
-
-    <script>
-        (function() {
-            'use strict';
+            // Wall background
+            const wallGeometry = new THREE.BoxGeometry(5, 4, 0.1);
+            const wallMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x2a2a2a, 
+                roughness: 0.5, 
+                metalness: 0.1 
+            });
+            const wall = new THREE.Mesh(wallGeometry, wallMaterial);
+            wall.receiveShadow = true;
+            wall.castShadow = true;
+            wallGroup.add(wall);
             
-            // Updated card data with unique titles (customize these)
-            const cardData = {
-                "1": { title: "Pompa Paulie", series: "GPK Ultra 3D", value: 150.00 },
-                "2": { title: "Atomic Adam", series: "GPK Ultra 3D", value: 125.00 },
-                "3": { title: "Bionic Betty", series: "GPK Ultra 3D", value: 200.00 },
-                "4": { title: "Cosmic Carl", series: "GPK Ultra 3D", value: 175.00 },
-                "5": { title: "Digital Dave", series: "GPK Ultra 3D", value: 225.00 },
-                "6": { title: "Electric Eve", series: "GPK Ultra 3D", value: 250.00 },
-                "7": { title: "Fusion Frank", series: "GPK Ultra 3D", value: 200.00 },
-                "8": { title: "Gamma Gary", series: "GPK Ultra 3D", value: 275.00 },
-                "9": { title: "Hologram Helen", series: "GPK Ultra 3D", value: 300.00 },
-                "10": { title: "Ion Ivan", series: "GPK Ultra 3D", value: 325.00 },
-                "11": { title: "Jupiter Jane", series: "GPK Ultra 3D", value: 250.00 },
-                "12": { title: "Kinetic Kyle", series: "GPK Ultra 3D", value: 225.00 },
-            };
+            // Frame material
+            const frameMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0xffde37, 
+                roughness: 0.3, 
+                metalness: 0.7,
+                emissive: new THREE.Color(0x332200)
+            });
             
-            let sceneLoaded = false;
-            let assetsLoaded = 0;
-            let totalAssets = 0;
-            const enterButton = document.getElementById('enter-button');
-            const loadingStatus = document.getElementById('loading-status');
-            const loadingProgress = document.getElementById('loading-progress');
-            const errorMessage = document.getElementById('error-message');
-            const scene = document.querySelector('a-scene');
-            
-            // Error handling for image loading
-            function handleImageError(imgElement) {
-                console.warn(`Failed to load image: ${imgElement.src}`);
-                // Use placeholder for failed images
-                imgElement.src = `https://placehold.co/400x550/666/fff?text=${encodeURIComponent(imgElement.id || 'Error')}`;
-                showError(`Some images failed to load. Using placeholders.`);
-            }
-            
-            // Track asset loading
-            function setupAssetTracking() {
-                const assets = document.querySelector('a-assets');
-                const images = assets.querySelectorAll('img');
-                totalAssets = images.length;
+            // Add 3 cards per wall
+            const positions = [-2, 0, 2];
+            positions.forEach((xOffset, index) => {
+                const cardIndex = startIndex + index;
                 
-                images.forEach(img => {
-                    img.addEventListener('load', () => {
-                        assetsLoaded++;
-                        updateLoadingProgress();
-                    });
+                // Frame
+                const frameGeometry = new THREE.BoxGeometry(0.9, 1.2, 0.05);
+                const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+                frame.position.set(xOffset, 0.5, 0.06);
+                frame.castShadow = true;
+                frame.receiveShadow = true;
+                wallGroup.add(frame);
+                
+                // Card image
+                const cardMaterial = new THREE.MeshStandardMaterial({
+                    roughness: 0.4,
+                    metalness: 0.1
+                });
+                
+                if (cardImages[cardIndex]) {
+                    const texture = textureLoader.load(cardImages[cardIndex]);
+                    cardMaterial.map = texture;
+                } else {
+                    // Create placeholder texture
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 512;
+                    canvas.height = 712;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = '#ff3e41';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = 'bold 40px Arial';
+                    ctx.fillStyle = '#ffde37';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(`Card ${cardIndex + 1}`, canvas.width/2, canvas.height/2);
+                    cardMaterial.map = new THREE.CanvasTexture(canvas);
+                }
+                
+                const cardGeometry = new THREE.BoxGeometry(0.8, 1.1, 0.01);
+                const card = new THREE.Mesh(cardGeometry, cardMaterial);
+                card.position.set(xOffset, 0.5, 0.09);
+                card.castShadow = true;
+                card.receiveShadow = true;
+                card.userData = { 
+                    type: 'card', 
+                    cardId: (cardIndex + 1).toString(),
+                    data: cardData[(cardIndex + 1).toString()]
+                };
+                wallGroup.add(card);
+                
+                // Add label
+                const labelDiv = document.createElement('div');
+                labelDiv.textContent = cardData[(cardIndex + 1).toString()]?.title || `Card ${cardIndex + 1}`;
+                labelDiv.style.color = '#ffde37';
+                labelDiv.style.fontSize = '12px';
+                labelDiv.style.fontWeight = 'bold';
+                labelDiv.style.textShadow = '1px 1px 2px black';
+                labelDiv.style.background = 'rgba(0,0,0,0.7)';
+                labelDiv.style.padding = '4px 8px';
+                labelDiv.style.borderRadius = '4px';
+                labelDiv.style.pointerEvents = 'none';
+                
+                const label = new CSS2DObject(labelDiv);
+                label.position.set(xOffset, -0.3, 0.1);
+                wallGroup.add(label);
+            });
+            
+            wallGroup.position.set(position.x, position.y, position.z);
+            wallGroup.rotation.y = rotation;
+            
+            return wallGroup;
+        }
+        
+        // Create walls
+        scene.add(createWallWithCards(new THREE.Vector3(0, 1.5, -4.5), 0, 0)); // North
+        scene.add(createWallWithCards(new THREE.Vector3(4.5, 1.5, 0), Math.PI / 2, 3)); // East
+        scene.add(createWallWithCards(new THREE.Vector3(0, 1.5, 4.5), Math.PI, 6)); // South
+        scene.add(createWallWithCards(new THREE.Vector3(-4.5, 1.5, 0), -Math.PI / 2, 9)); // West
+        
+        // Centerpiece - Featured card
+        const featuredCardGroup = new THREE.Group();
+        featuredCardGroup.position.set(0, 1.5, 0);
+        
+        const pedestalGeometry = new THREE.CylinderGeometry(0.8, 1, 0.3, 8);
+        const pedestalMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0xffde37, 
+            roughness: 0.3, 
+            metalness: 0.7 
+        });
+        const pedestal = new THREE.Mesh(pedestalGeometry, pedestalMaterial);
+        pedestal.position.y = 0.15;
+        pedestal.castShadow = true;
+        pedestal.receiveShadow = true;
+        featuredCardGroup.add(pedestal);
+        
+        const featuredTexture = textureLoader.load('PompaPaulie.png');
+        const featuredMaterial = new THREE.MeshStandardMaterial({ map: featuredTexture });
+        const featuredGeometry = new THREE.BoxGeometry(1.5, 2.1, 0.05);
+        const featuredCard = new THREE.Mesh(featuredGeometry, featuredMaterial);
+        featuredCard.position.set(0, 1.4, 0.5);
+        featuredCard.castShadow = true;
+        featuredCard.receiveShadow = true;
+        featuredCardGroup.add(featuredCard);
+        
+        scene.add(featuredCardGroup);
+        
+        // Add rotating animation to featured card
+        function animateFeaturedCard() {
+            featuredCardGroup.rotation.y += 0.001;
+        }
+        
+        // Add 3D Character (simplified)
+        const characterGroup = new THREE.Group();
+        characterGroup.position.set(1.5, 0, -2);
+        
+        // Body
+        const bodyGeo = new THREE.CylinderGeometry(0.4, 0.4, 1.2);
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0xff3e41 });
+        const body = new THREE.Mesh(bodyGeo, bodyMat);
+        body.position.y = 0.6;
+        body.castShadow = true;
+        body.receiveShadow = true;
+        characterGroup.add(body);
+        
+        // Head
+        const headGeo = new THREE.SphereGeometry(0.3);
+        const headMat = new THREE.MeshStandardMaterial({ color: 0xffde37 });
+        const head = new THREE.Mesh(headGeo, headMat);
+        head.position.y = 1.3;
+        head.castShadow = true;
+        head.receiveShadow = true;
+        characterGroup.add(head);
+        
+        // Eyes
+        const eyeGeo = new THREE.SphereGeometry(0.08);
+        const eyeMat = new THREE.MeshStandardMaterial({ color: 0x000000 });
+        const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+        leftEye.position.set(-0.15, 1.35, 0.25);
+        characterGroup.add(leftEye);
+        
+        const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+        rightEye.position.set(0.15, 1.35, 0.25);
+        characterGroup.add(rightEye);
+        
+        characterGroup.userData = { type: 'character' };
+        scene.add(characterGroup);
+        
+        // Raycaster for interaction
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        
+        renderer.domElement.addEventListener('click', (event) => {
+            mouse.x = (event.clientX / renderer.domElement.clientWidth) * 2 - 1;
+            mouse.y = -(event.clientY / renderer.domElement.clientHeight) * 2 + 1;
+            
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(scene.children, true);
+            
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                
+                if (hit.userData.type === 'card') {
+                    showCardDetails(hit.userData.cardId);
                     
-                    img.addEventListener('error', () => {
-                        assetsLoaded++;
-                        handleImageError(img);
-                        updateLoadingProgress();
+                    // Animate card
+                    gsap.to(hit.scale, {
+                        x: 1.1, y: 1.1, z: 1.1,
+                        duration: 0.3,
+                        yoyo: true,
+                        repeat: 1
                     });
-                });
-                
-                // Track 3D model loading
-                const model = document.getElementById('futuristic-model');
-                if (model) {
-                    totalAssets++;
-                    model.addEventListener('loaded', () => {
-                        assetsLoaded++;
-                        updateLoadingProgress();
-                    });
-                    
-                    model.addEventListener('error', () => {
-                        console.warn('3D model failed to load, using fallback');
-                        assetsLoaded++;
-                        updateLoadingProgress();
-                        // Show fallback model
-                        const fallback = document.getElementById('fallback-model');
-                        const character = document.getElementById('futuristic-character');
-                        if (fallback && character) {
-                            character.setAttribute('visible', 'false');
-                            fallback.setAttribute('visible', 'true');
-                        }
+                } else if (hit.userData.type === 'character' || hit.parent?.userData?.type === 'character') {
+                    // Animate character
+                    gsap.to(characterGroup.rotation, {
+                        y: characterGroup.rotation.y + Math.PI * 2,
+                        duration: 2,
+                        ease: "power2.inOut"
                     });
                 }
             }
+        });
+        
+        function showCardDetails(cardId) {
+            const card = cardData[cardId];
+            if (!card) return;
             
-            function updateLoadingProgress() {
-                const progress = Math.round((assetsLoaded / totalAssets) * 100);
-                loadingProgress.textContent = `${progress}%`;
-                
-                if (assetsLoaded === totalAssets) {
-                    loadingStatus.style.display = 'none';
+            document.getElementById('card-title').textContent = card.title;
+            document.getElementById('card-series').textContent = card.series;
+            document.getElementById('card-value').textContent = card.value.toFixed(2);
+            
+            const detailsPanel = document.getElementById('card-details');
+            detailsPanel.style.display = 'block';
+            
+            if (window.detailsTimeout) {
+                clearTimeout(window.detailsTimeout);
+            }
+            
+            window.detailsTimeout = setTimeout(() => {
+                detailsPanel.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Initialize MapSystem
+        let mapSystem;
+        
+        function initMapSystem() {
+            mapSystem = new MapSystem({
+                scene: scene,
+                camera: camera,
+                renderer: renderer
+            });
+            
+            // Set POIs
+            const pois = [
+                { name: 'Featured Card', position: [0, 1.5, 0], description: 'Center display' },
+                { name: 'North Gallery', position: [0, 1.5, -4], description: 'North wall collection' },
+                { name: 'East Gallery', position: [4, 1.5, 0], description: 'East wall collection' },
+                { name: 'South Gallery', position: [0, 1.5, 4], description: 'South wall collection' },
+                { name: 'West Gallery', position: [-4, 1.5, 0], description: 'West wall collection' },
+                { name: 'GPK Character', position: [1.5, 1, -2], description: 'Interactive character' }
+            ];
+            
+            mapSystem.setPOIs(pois);
+        }
+        
+        // Enter button handler
+        document.getElementById('enter-button').addEventListener('click', () => {
+            document.getElementById('enter-button').style.display = 'none';
+            controls.autoRotate = false;
+            
+            // Initialize MapSystem after user interaction
+            if (!mapSystem) {
+                initMapSystem();
+            }
+            
+            // Add XR UI
+            const xrUI = document.createElement('xr-ui');
+            document.body.appendChild(xrUI);
+        });
+        
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            controls.update();
+            animateFeaturedCard();
+            
+            // Rotate stars slowly
+            stars.rotation.y += 0.0001;
+            
+            // Update MapSystem
+            if (mapSystem && mapSystem.update) {
+                mapSystem.update(0.016);
+            }
+            
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        
+        animate();
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Keyboard controls
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (controls.autoRotate) {
+                    controls.autoRotate = false;
                 }
             }
-            
-            function showError(message) {
-                errorMessage.textContent = message;
-                errorMessage.style.display = 'block';
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                }, 5000);
-            }
-            
-            // Setup card interactions
-            function setupCardInteractions() {
-                if (!sceneLoaded) {
-                    console.warn('Scene not fully loaded yet');
-                    return;
-                }
-                
-                document.querySelectorAll('.card').forEach(card => {
-                    // Remove existing listeners to prevent duplicates
-                    card.removeEventListener('click', handleCardClick);
-                    card.addEventListener('click', handleCardClick);
-                });
-                
-                // Setup 3D character interaction
-                const character = document.getElementById('futuristic-character');
-                const fallback = document.getElementById('fallback-model');
-                
-                [character, fallback].forEach(el => {
-                    if (el) {
-                        el.removeEventListener('click', handleCharacterClick);
-                        el.addEventListener('click', handleCharacterClick);
-                    }
-                });
-            }
-            
-            function handleCardClick(event) {
-                const card = event.currentTarget;
-                const cardId = card.getAttribute('data-card');
-                showCardDetails(cardId);
-                
-                // Proper A-Frame animation format
-                card.setAttribute('animation__scale', {
-                    property: 'scale',
-                    to: '1.1 1.1 1.1',
-                    dur: 300,
-                    easing: 'easeInOutQuad',
-                    dir: 'alternate'
-                });
-            }
-            
-            function handleCharacterClick(event) {
-                const character = event.currentTarget;
-                const currentRotation = character.getAttribute('rotation') || { x: 0, y: 180, z: 0 };
-                
-                character.setAttribute('animation__spin', {
-                    property: 'rotation',
-                    to: `0 ${currentRotation.y + 360} 0`,
-                    dur: 2000,
-                    easing: 'easeInOutQuad'
-                });
-            }
-            
-            function showCardDetails(cardId) {
-                const card = cardData[cardId];
-                if (!card) {
-                    console.warn(`Card ${cardId} not found`);
-                    return;
-                }
-                
-                document.getElementById('card-title').textContent = card.title;
-                document.getElementById('card-series').textContent = card.series;
-                document.getElementById('card-value').textContent = card.value.toFixed(2);
-                
-                const detailsPanel = document.getElementById('card-details');
-                detailsPanel.style.display = 'block';
-                
-                // Clear any existing timeout
-                if (window.detailsTimeout) {
-                    clearTimeout(window.detailsTimeout);
-                }
-                
-                window.detailsTimeout = setTimeout(() => {
-                    detailsPanel.style.display = 'none';
-                }, 5000);
-            }
-            
-            // Initialize everything
-            function initialize() {
-                enterButton.addEventListener('click', () => {
-                    enterButton.style.display = 'none';
-                    loadingStatus.style.display = 'block';
-                    
-                    // Start asset tracking
-                    setupAssetTracking();
-                    
-                    // Enter VR mode if on mobile
-                    if (scene && scene.renderer && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                        setTimeout(() => {
-                            scene.enterVR();
-                        }, 1000);
-                    }
-                });
-                
-                // Keyboard accessibility
-                enterButton.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        enterButton.click();
-                    }
-                });
-                
-                // Wait for scene to fully load
-                scene.addEventListener('loaded', () => {
-                    sceneLoaded = true;
-                    console.log('Scene loaded successfully');
-                    setupCardInteractions();
-                });
-                
-                // Handle scene load errors
-                scene.addEventListener('error', (e) => {
-                    console.error('Scene error:', e);
-                    showError('Scene failed to load properly. Please refresh.');
-                });
-                
-                // Setup interactions after scene loads
-                scene.addEventListener('renderstart', () => {
-                    console.log('Rendering started');
-                    if (!sceneLoaded) {
-                        sceneLoaded = true;
-                        setupCardInteractions();
-                    }
-                });
-            }
-            
-            // Start initialization when DOM is ready
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initialize);
-            } else {
-                initialize();
-            }
-            
-            // Mobile VR optimizations
-            if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-                // Add mobile-specific optimizations
-                const style = document.createElement('style');
-                style.textContent = `
-                    .a-enter-vr-button {
-                        display: none !important;
-                    }
-                `;
-                document.head.appendChild(style);
-            }
-            
-        })();
+        });
+        
+        console.log('GPK Ultra 3D Gallery initialized!');
     </script>
 </body>
 </html>
