@@ -7,7 +7,6 @@
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.0/dist/aframe-environment-component.min.js"></script>
     <script src="https://unpkg.com/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
-    <!-- Add movement-controls component -->
     <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
         body {
@@ -30,10 +29,30 @@
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
             font-family: 'Bangers', cursive;
+            transition: transform 0.2s;
+        }
+        #enter-button:hover {
+            transform: translate(-50%, -50%) scale(1.05);
+        }
+        #enter-button:focus {
+            outline: 3px solid #ffde37;
+            outline-offset: 2px;
+        }
+        #loading-status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10000;
+            display: none;
+            font-family: Arial, sans-serif;
         }
         .ui-panel {
             position: fixed;
-            background: rgba(26, 26, 26, 0.9);
+            background: rgba(26, 26, 26, 0.95);
             border: 3px solid #ffde37;
             border-radius: 10px;
             padding: 15px;
@@ -41,37 +60,74 @@
             color: white;
             max-width: 300px;
             font-family: Arial, sans-serif;
+            backdrop-filter: blur(5px);
+            pointer-events: none;
         }
         #card-details {
             top: 20px;
             right: 20px;
             display: none;
+            pointer-events: none;
+        }
+        .error-message {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: #ff3e41;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 10001;
+            display: none;
+            max-width: 300px;
+            font-family: Arial, sans-serif;
+        }
+        /* Accessibility - keyboard focus styles */
+        *:focus-visible {
+            outline: 3px solid #ffde37;
+            outline-offset: 2px;
+        }
+        /* Mobile optimization */
+        @media (max-width: 768px) {
+            #enter-button {
+                font-size: 1.8rem;
+                padding: 15px 30px;
+            }
         }
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
 </head>
 <body>
-    <button id="enter-button">ENTER VR GALLERY</button>
+    <button id="enter-button" aria-label="Enter VR Gallery">ENTER VR GALLERY</button>
+    <div id="loading-status">Loading assets... <span id="loading-progress">0%</span></div>
+    <div id="error-message" class="error-message"></div>
     
-    <div id="card-details" class="ui-panel">
+    <div id="card-details" class="ui-panel" role="complementary" aria-live="polite">
         <h2 style="color:#ffde37;margin-bottom:10px;">CARD DETAILS</h2>
         <p><strong>Title:</strong> <span id="card-title"></span></p>
         <p><strong>Series:</strong> <span id="card-series"></span></p>
         <p><strong>Value:</strong> $<span id="card-value"></span></p>
     </div>
 
-    <a-scene vr-mode-ui="enabled: true" loading-screen="enabled: false" renderer="colorManagement: true">
+    <a-scene 
+        vr-mode-ui="enabled: true" 
+        loading-screen="enabled: true; dotsColor: #ffde37; backgroundColor: #1a1a1a"
+        renderer="colorManagement: true; antialias: true"
+        device-orientation-permission-ui="enabled: true">
+        
         <!-- Environment -->
         <a-entity environment="preset: starry; groundColor: #1a1a1a; grid: none"></a-entity>
         
         <!-- Camera Rig with proper movement controls -->
-        <a-entity id="rig" movement-controls="speed: 0.5">
+        <a-entity id="rig" movement-controls="speed: 0.5; controls: keyboard, touch">
             <a-entity camera look-controls="pointerLockEnabled: true" position="0 1.6 0">
                 <a-entity cursor="fuse: true; fuseTimeout: 500" 
                           position="0 0 -1"
                           geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
                           material="color: #ffde37; shader: flat"
-                          raycaster="objects: .clickable">
+                          raycaster="objects: .clickable; far: 20"
+                          event-set__mouseenter="_event: mouseenter; material.color: #ff3e41; scale: 1.2 1.2 1.2"
+                          event-set__mouseleave="_event: mouseleave; material.color: #ffde37; scale: 1 1 1">
                 </a-entity>
             </a-entity>
         </a-entity>
@@ -130,11 +186,11 @@
         </a-entity>
         
         <!-- Centerpiece -->
-        <a-entity position="0 1.5 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 60000">
+        <a-entity position="0 1.5 0" animation__rotation="property: rotation; to: 0 360 0; loop: true; dur: 60000; easing: linear">
             <a-image src="#featured-card" width="1.5" height="2.1" position="0 1.5 -0.5"></a-image>
         </a-entity>
         
-        <!-- 3D Character -->
+        <!-- 3D Character - Optional, will gracefully fail if model unavailable -->
         <a-entity 
             id="futuristic-character"
             gltf-model="#futuristic-model"
@@ -142,106 +198,283 @@
             scale="2 2 2"
             rotation="0 180 0"
             class="clickable"
-            animation-mixer>
+            animation-mixer
+            fallback-component="fallback-model">
+        </a-entity>
+
+        <!-- Fallback for 3D model -->
+        <a-entity id="fallback-model" position="1 0 -3" scale="2 2 2" rotation="0 180 0" class="clickable" visible="false">
+            <a-box color="#ff3e41" width="0.8" height="1.6" depth="0.4"></a-box>
+            <a-sphere color="#ffde37" radius="0.3" position="0 1 0"></a-sphere>
+            <a-text value="GPK" align="center" position="0 1.2 0.21" color="#1a1a1a" width="1"></a-text>
         </a-entity>
 
         <!-- Assets -->
-        <a-assets>
-            <!-- Replace these with your actual card images -->
-            <img id="card1" src="PompaPaulie.png">
-            <img id="card2" src="20250503011555.png">
-            <img id="card3" src="20250503034156.png">
-            <img id="card4" src="20250503012558.png">
-            <img id="card5" src="20250503022823.png">
-            <img id="card6" src="20250503032454.png">
-            <img id="card7" src="20250503035601.png">
-            <img id="card8" src="20250503214217.png">
-            <img id="card9" src="20250503212559.png">
-            <img id="card10" src="20250507032544.png">
-            <!-- Placeholder images for missing cards -->
-            <img id="card11" src="https://placehold.co/400x550/ff3e41/ffde37?text=Card+11">
-            <img id="card12" src="https://placehold.co/400x550/ff3e41/ffde37?text=Card+12">
-            <img id="featured-card" src="PompaPaulie.png">
+        <a-assets timeout="10000">
+            <!-- Card Images -->
+            <img id="card1" src="PompaPaulie.png" crossorigin="anonymous">
+            <img id="card2" src="20250503011555.png" crossorigin="anonymous">
+            <img id="card3" src="20250503034156.png" crossorigin="anonymous">
+            <img id="card4" src="20250503012558.png" crossorigin="anonymous">
+            <img id="card5" src="20250503022823.png" crossorigin="anonymous">
+            <img id="card6" src="20250503032454.png" crossorigin="anonymous">
+            <img id="card7" src="20250503035601.png" crossorigin="anonymous">
+            <img id="card8" src="20250503214217.png" crossorigin="anonymous">
+            <img id="card9" src="20250503212559.png" crossorigin="anonymous">
+            <img id="card10" src="20250507032544.png" crossorigin="anonymous">
+            <img id="card11" src="https://placehold.co/400x550/ff3e41/ffde37?text=Coming+Soon" crossorigin="anonymous">
+            <img id="card12" src="https://placehold.co/400x550/ff3e41/ffde37?text=Coming+Soon" crossorigin="anonymous">
+            <img id="featured-card" src="PompaPaulie.png" crossorigin="anonymous">
             
-            <!-- 3D Model Asset -->
-            <a-asset-item id="futuristic-model" src="https://sketchfab.com/models/a65a04e20afa4b0b90c76bdf48a7a5fb/download?format=glb"></a-asset-item>
+            <!-- 3D Model - Using a reliable CDN with fallback -->
+            <a-asset-item id="futuristic-model" 
+                          src="https://raw.githubusercontent.com/aframevr/sample-assets/master/assets/models/character.glb"
+                          response-type="arraybuffer">
+            </a-asset-item>
         </a-assets>
     </a-scene>
 
     <script>
-        // Card data - replace with your actual collection
-        const cardData = {
-            "1": { title: "Pompa Paulie", series: "Ultra 3D", value: 150.00 },
-            "2": { title: "Ultra 3D", series: "Ultra 3D", value: 125.00 },
-            "3": { title: "Ultra 3D", series: "Ultra 3D", value: 200.00 },
-            "4": { title: "Ultra 3D", series: "Ultra 3D", value: 175.00 },
-            "5": { title: "Ultra 3D", series: "Ultra 3D", value: 225.00 },
-            "6": { title: "Ultra 3D", series: "Ultra 3D", value: 250.00 },
-            "7": { title: "Ultra 3D", series: "Ultra 3D", value: 200.00 }, // Fixed typo: vslue -> value
-            "8": { title: "Ultra 3D", series: "Ultra 3D", value: 275.00 },
-            "9": { title: "Ultra 3D", series: "Ultra 3D", value: 300.00 },
-            "10": { title: "Ultra 3D", series: "Ultra 3D", value: 325.00 },
-            "11": { title: "Ultra 3D", series: "Ultra 3D", value: 250.00 },
-            "12": { title: "Ultra 3D", series: "Ultra 3D", value: 225.00 },
-        };
-
-        // Initialize scene
-        document.getElementById('enter-button').addEventListener('click', function() {
-            this.style.display = 'none';
-            setupCardInteractions();
-        });
-
-        function setupCardInteractions() {
-            // Add click handlers to all cards
-            document.querySelectorAll('.card').forEach(card => {
-                card.addEventListener('click', function() {
-                    const cardId = this.getAttribute('data-card');
-                    showCardDetails(cardId);
+        (function() {
+            'use strict';
+            
+            // Updated card data with unique titles (customize these)
+            const cardData = {
+                "1": { title: "Pompa Paulie", series: "GPK Ultra 3D", value: 150.00 },
+                "2": { title: "Atomic Adam", series: "GPK Ultra 3D", value: 125.00 },
+                "3": { title: "Bionic Betty", series: "GPK Ultra 3D", value: 200.00 },
+                "4": { title: "Cosmic Carl", series: "GPK Ultra 3D", value: 175.00 },
+                "5": { title: "Digital Dave", series: "GPK Ultra 3D", value: 225.00 },
+                "6": { title: "Electric Eve", series: "GPK Ultra 3D", value: 250.00 },
+                "7": { title: "Fusion Frank", series: "GPK Ultra 3D", value: 200.00 },
+                "8": { title: "Gamma Gary", series: "GPK Ultra 3D", value: 275.00 },
+                "9": { title: "Hologram Helen", series: "GPK Ultra 3D", value: 300.00 },
+                "10": { title: "Ion Ivan", series: "GPK Ultra 3D", value: 325.00 },
+                "11": { title: "Jupiter Jane", series: "GPK Ultra 3D", value: 250.00 },
+                "12": { title: "Kinetic Kyle", series: "GPK Ultra 3D", value: 225.00 },
+            };
+            
+            let sceneLoaded = false;
+            let assetsLoaded = 0;
+            let totalAssets = 0;
+            const enterButton = document.getElementById('enter-button');
+            const loadingStatus = document.getElementById('loading-status');
+            const loadingProgress = document.getElementById('loading-progress');
+            const errorMessage = document.getElementById('error-message');
+            const scene = document.querySelector('a-scene');
+            
+            // Error handling for image loading
+            function handleImageError(imgElement) {
+                console.warn(`Failed to load image: ${imgElement.src}`);
+                // Use placeholder for failed images
+                imgElement.src = `https://placehold.co/400x550/666/fff?text=${encodeURIComponent(imgElement.id || 'Error')}`;
+                showError(`Some images failed to load. Using placeholders.`);
+            }
+            
+            // Track asset loading
+            function setupAssetTracking() {
+                const assets = document.querySelector('a-assets');
+                const images = assets.querySelectorAll('img');
+                totalAssets = images.length;
+                
+                images.forEach(img => {
+                    img.addEventListener('load', () => {
+                        assetsLoaded++;
+                        updateLoadingProgress();
+                    });
                     
-                    // Add pulse animation
-                    this.setAttribute('animation', {
-                        property: 'scale',
-                        to: '1.1 1.1 1.1',
-                        dur: 300,
-                        easing: 'easeInOutQuad',
-                        dir: 'alternate'
+                    img.addEventListener('error', () => {
+                        assetsLoaded++;
+                        handleImageError(img);
+                        updateLoadingProgress();
                     });
                 });
-            });
-            
-            // Add click handler for 3D character
-            const character = document.getElementById('futuristic-character');
-            if (character) {
-                character.addEventListener('click', function() {
-                    const currentRotation = this.getAttribute('rotation');
-                    const currentY = currentRotation ? currentRotation.y : 180;
-                    this.setAttribute('animation', {
-                        property: 'rotation',
-                        to: `0 ${currentY + 360} 0`,
-                        dur: 2000,
-                        easing: 'easeInOutQuad'
+                
+                // Track 3D model loading
+                const model = document.getElementById('futuristic-model');
+                if (model) {
+                    totalAssets++;
+                    model.addEventListener('loaded', () => {
+                        assetsLoaded++;
+                        updateLoadingProgress();
                     });
+                    
+                    model.addEventListener('error', () => {
+                        console.warn('3D model failed to load, using fallback');
+                        assetsLoaded++;
+                        updateLoadingProgress();
+                        // Show fallback model
+                        const fallback = document.getElementById('fallback-model');
+                        const character = document.getElementById('futuristic-character');
+                        if (fallback && character) {
+                            character.setAttribute('visible', 'false');
+                            fallback.setAttribute('visible', 'true');
+                        }
+                    });
+                }
+            }
+            
+            function updateLoadingProgress() {
+                const progress = Math.round((assetsLoaded / totalAssets) * 100);
+                loadingProgress.textContent = `${progress}%`;
+                
+                if (assetsLoaded === totalAssets) {
+                    loadingStatus.style.display = 'none';
+                }
+            }
+            
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Setup card interactions
+            function setupCardInteractions() {
+                if (!sceneLoaded) {
+                    console.warn('Scene not fully loaded yet');
+                    return;
+                }
+                
+                document.querySelectorAll('.card').forEach(card => {
+                    // Remove existing listeners to prevent duplicates
+                    card.removeEventListener('click', handleCardClick);
+                    card.addEventListener('click', handleCardClick);
+                });
+                
+                // Setup 3D character interaction
+                const character = document.getElementById('futuristic-character');
+                const fallback = document.getElementById('fallback-model');
+                
+                [character, fallback].forEach(el => {
+                    if (el) {
+                        el.removeEventListener('click', handleCharacterClick);
+                        el.addEventListener('click', handleCharacterClick);
+                    }
                 });
             }
-        }
-
-        function showCardDetails(cardId) {
-            const card = cardData[cardId];
-            if (!card) return;
             
-            // Update UI
-            document.getElementById('card-title').textContent = card.title;
-            document.getElementById('card-series').textContent = card.series;
-            document.getElementById('card-value').textContent = card.value.toFixed(2);
+            function handleCardClick(event) {
+                const card = event.currentTarget;
+                const cardId = card.getAttribute('data-card');
+                showCardDetails(cardId);
+                
+                // Proper A-Frame animation format
+                card.setAttribute('animation__scale', {
+                    property: 'scale',
+                    to: '1.1 1.1 1.1',
+                    dur: 300,
+                    easing: 'easeInOutQuad',
+                    dir: 'alternate'
+                });
+            }
             
-            // Show panel
-            document.getElementById('card-details').style.display = 'block';
+            function handleCharacterClick(event) {
+                const character = event.currentTarget;
+                const currentRotation = character.getAttribute('rotation') || { x: 0, y: 180, z: 0 };
+                
+                character.setAttribute('animation__spin', {
+                    property: 'rotation',
+                    to: `0 ${currentRotation.y + 360} 0`,
+                    dur: 2000,
+                    easing: 'easeInOutQuad'
+                });
+            }
             
-            // Hide after 5 seconds
-            setTimeout(() => {
-                document.getElementById('card-details').style.display = 'none';
-            }, 5000);
-        }
+            function showCardDetails(cardId) {
+                const card = cardData[cardId];
+                if (!card) {
+                    console.warn(`Card ${cardId} not found`);
+                    return;
+                }
+                
+                document.getElementById('card-title').textContent = card.title;
+                document.getElementById('card-series').textContent = card.series;
+                document.getElementById('card-value').textContent = card.value.toFixed(2);
+                
+                const detailsPanel = document.getElementById('card-details');
+                detailsPanel.style.display = 'block';
+                
+                // Clear any existing timeout
+                if (window.detailsTimeout) {
+                    clearTimeout(window.detailsTimeout);
+                }
+                
+                window.detailsTimeout = setTimeout(() => {
+                    detailsPanel.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Initialize everything
+            function initialize() {
+                enterButton.addEventListener('click', () => {
+                    enterButton.style.display = 'none';
+                    loadingStatus.style.display = 'block';
+                    
+                    // Start asset tracking
+                    setupAssetTracking();
+                    
+                    // Enter VR mode if on mobile
+                    if (scene && scene.renderer && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                        setTimeout(() => {
+                            scene.enterVR();
+                        }, 1000);
+                    }
+                });
+                
+                // Keyboard accessibility
+                enterButton.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        enterButton.click();
+                    }
+                });
+                
+                // Wait for scene to fully load
+                scene.addEventListener('loaded', () => {
+                    sceneLoaded = true;
+                    console.log('Scene loaded successfully');
+                    setupCardInteractions();
+                });
+                
+                // Handle scene load errors
+                scene.addEventListener('error', (e) => {
+                    console.error('Scene error:', e);
+                    showError('Scene failed to load properly. Please refresh.');
+                });
+                
+                // Setup interactions after scene loads
+                scene.addEventListener('renderstart', () => {
+                    console.log('Rendering started');
+                    if (!sceneLoaded) {
+                        sceneLoaded = true;
+                        setupCardInteractions();
+                    }
+                });
+            }
+            
+            // Start initialization when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initialize);
+            } else {
+                initialize();
+            }
+            
+            // Mobile VR optimizations
+            if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+                // Add mobile-specific optimizations
+                const style = document.createElement('style');
+                style.textContent = `
+                    .a-enter-vr-button {
+                        display: none !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+        })();
     </script>
 </body>
 </html>
