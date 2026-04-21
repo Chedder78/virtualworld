@@ -7,6 +7,8 @@
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://unpkg.com/aframe-environment-component@1.3.0/dist/aframe-environment-component.min.js"></script>
     <script src="https://unpkg.com/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
+    <!-- Add movement-controls component -->
+    <script src="https://unpkg.com/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -27,6 +29,7 @@
             z-index: 10000;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            font-family: 'Bangers', cursive;
         }
         .ui-panel {
             position: fixed;
@@ -37,6 +40,7 @@
             z-index: 10000;
             color: white;
             max-width: 300px;
+            font-family: Arial, sans-serif;
         }
         #card-details {
             top: 20px;
@@ -60,86 +64,90 @@
         <!-- Environment -->
         <a-entity environment="preset: starry; groundColor: #1a1a1a; grid: none"></a-entity>
         
-        <!-- Camera Rig -->
+        <!-- Camera Rig with proper movement controls -->
         <a-entity id="rig" movement-controls="speed: 0.5">
             <a-entity camera look-controls="pointerLockEnabled: true" position="0 1.6 0">
                 <a-entity cursor="fuse: true; fuseTimeout: 500" 
                           position="0 0 -1"
                           geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                          material="color: #ffde37; shader: flat">
+                          material="color: #ffde37; shader: flat"
+                          raycaster="objects: .clickable">
                 </a-entity>
             </a-entity>
         </a-entity>
-        <a-entity
-  id="retro-bot"
-  gltf-model="#retro-glasses-bot"
-  position="1 0 -2"
-  scale="1.2 1.2 1.2"
-  rotation="0 180 0"
-  animation-mixer>
-</a-entity>
 
         <!-- Floating Cards on Walls -->
-<!-- north -->
-<a-entity id="north-wall" position="0 1.5 -4" rotation="0 0 0">
-    <a-entity class="card" position="-2 1.5 0" rotation="0 0 0" data-card="1">
-        <a-image src="#card1" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 0" rotation="0 0 0" data-card="2">
-        <a-image src="#card2" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="2 1.5 0" rotation="0 0 0" data-card="3">
-        <a-image src="#card3" width="0.8" height="1.1"></a-image>
-    </a-entity>
-</a-entity>
+        <!-- north -->
+        <a-entity id="north-wall" position="0 1.5 -4" rotation="0 0 0">
+            <a-entity class="card clickable" position="-2 1.5 0" rotation="0 0 0" data-card="1">
+                <a-image src="#card1" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="2">
+                <a-image src="#card2" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="2 1.5 0" rotation="0 0 0" data-card="3">
+                <a-image src="#card3" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
 
-<!-- east -->
-<a-entity id="east-wall" position="4 1.5 0" rotation="0 -90 0">
-    <a-entity class="card" position="0 1.5 -2" rotation="0 0 0" data-card="4">
-        <a-image src="#card4" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 0" rotation="0 0 0" data-card="5">
-        <a-image src="#card5" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 2" rotation="0 0 0" data-card="6">
-        <a-image src="#card6" width="0.8" height="1.1"></a-image>
-    </a-entity>
-</a-entity>
+        <!-- east -->
+        <a-entity id="east-wall" position="4 1.5 0" rotation="0 -90 0">
+            <a-entity class="card clickable" position="0 1.5 -2" rotation="0 0 0" data-card="4">
+                <a-image src="#card4" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="5">
+                <a-image src="#card5" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 2" rotation="0 0 0" data-card="6">
+                <a-image src="#card6" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
 
-<!-- south -->
-<a-entity id="south-wall" position="0 1.5 4" rotation="0 180 0">
-    <a-entity class="card" position="-2 1.5 0" rotation="0 0 0" data-card="7">
-        <a-image src="#card7" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 0" rotation="0 0 0" data-card="8">
-        <a-image src="#card8" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="2 1.5 0" rotation="0 0 0" data-card="9">
-        <a-image src="#card9" width="0.8" height="1.1"></a-image>
-    </a-entity>
-</a-entity>
+        <!-- south -->
+        <a-entity id="south-wall" position="0 1.5 4" rotation="0 180 0">
+            <a-entity class="card clickable" position="-2 1.5 0" rotation="0 0 0" data-card="7">
+                <a-image src="#card7" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="8">
+                <a-image src="#card8" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="2 1.5 0" rotation="0 0 0" data-card="9">
+                <a-image src="#card9" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
 
-<!-- west -->
-<a-entity id="west-wall" position="-4 1.5 0" rotation="0 90 0">
-    <a-entity class="card" position="0 1.5 -2" rotation="0 0 0" data-card="10">
-        <a-image src="#card10" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 0" rotation="0 0 0" data-card="11">
-        <a-image src="#card11" width="0.8" height="1.1"></a-image>
-    </a-entity>
-    <a-entity class="card" position="0 1.5 2" rotation="0 0 0" data-card="12">
-        <a-image src="#card12" width="0.8" height="1.1"></a-image>
-    </a-entity>
-</a-entity>
+        <!-- west -->
+        <a-entity id="west-wall" position="-4 1.5 0" rotation="0 90 0">
+            <a-entity class="card clickable" position="0 1.5 -2" rotation="0 0 0" data-card="10">
+                <a-image src="#card10" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 0" rotation="0 0 0" data-card="11">
+                <a-image src="#card11" width="0.8" height="1.1"></a-image>
+            </a-entity>
+            <a-entity class="card clickable" position="0 1.5 2" rotation="0 0 0" data-card="12">
+                <a-image src="#card12" width="0.8" height="1.1"></a-image>
+            </a-entity>
+        </a-entity>
         
         <!-- Centerpiece -->
         <a-entity position="0 1.5 0" animation="property: rotation; to: 0 360 0; loop: true; dur: 60000">
             <a-image src="#featured-card" width="1.5" height="2.1" position="0 1.5 -0.5"></a-image>
         </a-entity>
         
+        <!-- 3D Character -->
+        <a-entity 
+            id="futuristic-character"
+            gltf-model="#futuristic-model"
+            position="1 0 -3"
+            scale="2 2 2"
+            rotation="0 180 0"
+            class="clickable"
+            animation-mixer>
+        </a-entity>
+
         <!-- Assets -->
         <a-assets>
-             <!-- Replace these with your actual card images -->
+            <!-- Replace these with your actual card images -->
             <img id="card1" src="PompaPaulie.png">
             <img id="card2" src="20250503011555.png">
             <img id="card3" src="20250503034156.png">
@@ -150,39 +158,15 @@
             <img id="card8" src="20250503214217.png">
             <img id="card9" src="20250503212559.png">
             <img id="card10" src="20250507032544.png">
-            <img id="card11" src="">
-            <img id="card12" src="">
+            <!-- Placeholder images for missing cards -->
+            <img id="card11" src="https://placehold.co/400x550/ff3e41/ffde37?text=Card+11">
+            <img id="card12" src="https://placehold.co/400x550/ff3e41/ffde37?text=Card+12">
             <img id="featured-card" src="PompaPaulie.png">
-       
+            
+            <!-- 3D Model Asset -->
+            <a-asset-item id="futuristic-model" src="https://sketchfab.com/models/a65a04e20afa4b0b90c76bdf48a7a5fb/download?format=glb"></a-asset-item>
         </a-assets>
-        <a-asset-item id="retro-glasses-bot" src="https://sketchfab.com/models/a65a04e20afa4b0b90c76bdf48a7a5fb/download?format=glb"></a-asset-item>
-
-        <a-entity 
-  id="futuristic-character"
-  gltf-model="#futuristic-model"
-  position="1 0 -3"
-  scale="2 2 2"
-  rotation="0 180 0"
-  animation-mixer>
-</a-entity>
-
     </a-scene>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  ['robot-comp','retro-bot'].forEach(id => {
-    const bot = document.getElementById(id);
-    bot.addEventListener('click', () => {
-      const y = bot.getAttribute('rotation').y;
-      bot.setAttribute('animation', {
-        property: 'rotation',
-        to: `0 ${y + 360} 0`,
-        dur: 2000,
-        easing: 'easeInOutQuad'
-      });
-    });
-  });
-});
-</script>
 
     <script>
         // Card data - replace with your actual collection
@@ -193,12 +177,12 @@ document.addEventListener('DOMContentLoaded', () => {
             "4": { title: "Ultra 3D", series: "Ultra 3D", value: 175.00 },
             "5": { title: "Ultra 3D", series: "Ultra 3D", value: 225.00 },
             "6": { title: "Ultra 3D", series: "Ultra 3D", value: 250.00 },
-            "7": { title: "Ultra 3D", series: "Ultra 3D", vslue: 200.00 },
+            "7": { title: "Ultra 3D", series: "Ultra 3D", value: 200.00 }, // Fixed typo: vslue -> value
             "8": { title: "Ultra 3D", series: "Ultra 3D", value: 275.00 },
             "9": { title: "Ultra 3D", series: "Ultra 3D", value: 300.00 },
-            "10": { title: "Ultra 3D", series: "Ultra 3D", value: 325.00},
-            "11": { title: "Ultra 3D", series: "Ultra 3D", value: 250.00},
-            "12": { title: "Ultra 3D", series: "Ultra 3D", value: 225.00},
+            "10": { title: "Ultra 3D", series: "Ultra 3D", value: 325.00 },
+            "11": { title: "Ultra 3D", series: "Ultra 3D", value: 250.00 },
+            "12": { title: "Ultra 3D", series: "Ultra 3D", value: 225.00 },
         };
 
         // Initialize scene
@@ -224,6 +208,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+            
+            // Add click handler for 3D character
+            const character = document.getElementById('futuristic-character');
+            if (character) {
+                character.addEventListener('click', function() {
+                    const currentRotation = this.getAttribute('rotation');
+                    const currentY = currentRotation ? currentRotation.y : 180;
+                    this.setAttribute('animation', {
+                        property: 'rotation',
+                        to: `0 ${currentY + 360} 0`,
+                        dur: 2000,
+                        easing: 'easeInOutQuad'
+                    });
+                });
+            }
         }
 
         function showCardDetails(cardId) {
@@ -244,18 +243,5 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 5000);
         }
     </script>
-    <script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const bot = document.getElementById('futuristic-character');
-    bot.addEventListener('click', () => {
-      bot.setAttribute('animation', {
-        property: 'rotation',
-        to: '0 ' + (parseInt(bot.getAttribute('rotation').y) + 360) + ' 0',
-        dur: 2000,
-        easing: 'easeInOutQuad'
-      });
-    });
-  });
-</script>
 </body>
 </html>
